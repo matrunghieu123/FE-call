@@ -1,0 +1,8 @@
+node_modules
+note
+.env
+Login.js
+Register.js
+redux
+AlohubApi.js
+AxiosService.js

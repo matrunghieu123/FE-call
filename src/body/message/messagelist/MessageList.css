@@ -1,0 +1,187 @@
+.chat-messages {
+  flex: 1;
+  display: flex;
+  border-top: 2px solid rgb(173, 176, 179);
+  overflow-x: hidden;
+  overflow-y: auto;
+  flex-direction: column;
+  padding: 10px;
+  box-sizing: border-box;
+  margin-right: -12px;
+}
+
+.message {
+  display: flex;
+  align-items: flex-start;
+  margin: 10px 20px;
+  position: relative;
+}
+
+.message.self.no-border {
+  flex-direction: row;
+  justify-content: flex-end;
+  border: none;
+  margin: 0;
+  padding: 5px 0;
+}
+
+/* Đảm bảo avatar hiển thị cho tin nhắn đầu tiên */
+.message.self:first-child .message-avatar {
+  display: block;
+}
+
+/* Căn chỉnh avatar cho người gửi */
+.message-avatar,
+.avatar.self {
+  margin-right: 10px; /* Điều chỉnh khoảng cách giữa avatar và nội dung */
+}
+
+/* Đảm bảo căn lề cho tin nhắn của người gửi */
+.message.self .message-content-wrapper {
+  margin-right: 10px;
+}
+
+/* Căn lề cho tin nhắn đầu tiên */
+.message:first-child .message-content-wrapper {
+  margin-right: 10px;
+  margin-left: 0;
+}
+
+.message-content-inner.self {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Đảm bảo rằng tin nhắn đầu tiên có đầy đủ thông tin người gửi */
+.message:first-child .message-sender-time-wrapper {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.message-sender-time-wrapper.self {
+  display: flex;
+  flex-direction: row-reverse;
+  margin-bottom: 10px;
+  margin-right: 1px;
+}
+
+.message-data {
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+  max-width: 100%;
+  word-wrap: break-word;
+  word-break: break-word;
+  position: relative;
+  align-self: flex-start;
+  margin-left: 0;
+}
+
+.message.self .message-data {
+  display: flex;
+  flex-direction: column; /* Sắp xếp text và file theo chiều dọc */
+  align-items: flex-end; /* Căn phải cho phần tử con */
+  justify-content: flex-start; /* Căn từ trên xuống dưới */
+  text-align: right; /* Căn phải cho nội dung văn bản */
+  background-color: #f0f0f0;
+  margin-right: 7px;
+  max-width: 100%;
+}
+
+.message:not(.self) .message-data {
+  display: flex;
+  flex-direction: column; /* Sắp xếp text và file theo chiều dọc */
+  align-items: flex-start; /* Căn trái cho phần tử con */
+  justify-content: flex-start; /* Căn từ trên xuống dưới */
+  text-align: left; /* Căn trái cho nội dung văn bản */
+}
+
+/* Thêm border cho phần file */
+.message-file {
+  padding: 10px;
+  border: 1px solid #ccc; /* Đường viền cho phần file */
+  border-radius: 8px;
+  background-color: #fff;
+  margin-top: 5px; /* Khoảng cách giữa text và file */
+}
+
+.message-time-hover {
+  display: none;
+  font-size: 0.8em;
+  color: #888;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.message .message-time-hover {
+  right: -130px;
+}
+
+.message.self .message-time-hover {
+  left: -130px;
+  right: auto;
+}
+
+.message:hover .message-time-hover {
+  display: inline-block;
+}
+
+.message-content-inner:first-child {
+  display: flex;
+  align-items: flex-end;
+  margin-right: 40px;
+}
+
+/* Điều chỉnh căn lề cho tin nhắn tiếp theo, ngoại trừ tin nhắn đầu tiên */
+.message:not(.self) .message-data {
+  margin-left: 50px;
+}
+
+.message.no-border {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: none;
+  margin: 0;
+  padding: 5px 0;
+}
+
+.ant-list .ant-list-item .ant-list-item-meta .ant-list-item-meta-content {
+  display: flex;
+  width: auto;
+}
+
+.ant-list .ant-list-item .ant-list-item-meta .ant-list-item-meta-description {
+  margin: 0 10px;
+}
+
+.date-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.date-separator .line {
+  flex: 1;
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 0 10px;
+}
+
+.date-separator .date-text {
+  font-weight: bold;
+  color: #666;
+}
+
+.message-sender {
+  margin: 0 8px;
+  font-weight: bold;
+}
+
+.message-time {
+  color: rgba(0, 0, 0, 0.45);
+}
+

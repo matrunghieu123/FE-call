@@ -1,0 +1,162 @@
+/* Container chính của công cụ chat */
+.chat-tool-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: white;
+  border-radius: 10px;
+  padding: 10px 5px;
+}
+
+/* Tiêu đề của phần ghi chú */
+.notes-title {
+  margin: 10px;
+  display: flex;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Wrapper cho các công cụ */
+.tool-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Thẻ card trạng thái */
+.status-card {
+  margin-bottom: 16px;
+}
+
+/* Container cho trạng thái */
+.status-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Container cho phần collapse */
+.collapse-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  background-color: white;
+  border: none;
+}
+
+/* Item của collapse */
+.collapse-container .ant-collapse-item {
+  transition: all 0.3s;
+}
+
+/* Item của collapse khi active */
+.collapse-container .ant-collapse-item-active {
+  flex-grow: 1; /* Thanh mở sẽ chiếm toàn bộ không gian còn lại */
+}
+
+/* Nội dung của collapse */
+.collapse-container .ant-collapse-content {
+  height: 100%;
+  overflow: hidden;
+  flex-grow: 1; /* Đảm bảo phần tử này chiếm toàn bộ không gian còn lại */
+}
+
+/* Container cho tag */
+.tag-container {
+  margin-top: 8px;
+}
+
+/* Container cho các nút hành động */
+.action-buttons {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Container cho avatar */
+.avatar-container {
+  text-align: center;
+}
+
+/* Container cho thông tin */
+.info-container {
+  max-height: 500px; /* Đặt chiều cao tối đa cho container thông tin */
+  overflow-y: auto; /* Cho phép cuộn dọc */
+}
+
+/* Header của text thông tin */
+.infor-text-header {
+  font-weight: bold;
+  overflow: hidden;
+}
+
+/* Item của ghi chú */
+.note-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+/* Header của ghi chú */
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* Ngày của ghi chú */
+.note-date {
+  font-weight: bold;
+}
+
+/* Nội dung của ghi chú */
+.note-content {
+  background-color: #f0f0f0;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  word-wrap: break-word; /* Ngắt dòng khi từ quá dài */
+  word-break: break-word; /* Ngắt từ khi quá dài */
+}
+
+/* Nút xóa ghi chú */
+.note-delete-button {
+  align-self: flex-end;
+  margin-top: 8px;
+}
+
+/* Container cho các ghi chú */
+.notes-container {
+  height: 68vh;
+  overflow-y: auto; /* Thêm thanh cuộn dọc */
+  padding: 8px;
+  border: none; /* Ẩn tất cả các đường viền */
+  border-top: 2px solid rgb(173, 176, 179);
+  background-color: #fff;
+  box-sizing: border-box; /* Đảm bảo padding được tính vào kích thước */
+}
+
+/* Container cho file đính kèm của ghi chú */
+.note-attachment {
+  display: flex;
+  align-items: center;
+}
+
+/* Hình ảnh đính kèm của ghi chú */
+.note-attachment img {
+  max-width: 100%;
+  max-height: 200px;
+  display: block;
+  margin-top: 8px;
+}
+
+/* Nút cho file đính kèm của ghi chú */
+.note-attachment button {
+  margin-left: 8px;
+  white-space: normal; /* Cho phép xuống dòng */
+  word-break: break-word; /* Tự động xuống dòng khi từ quá dài */
+}

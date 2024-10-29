@@ -1,0 +1,145 @@
+.ant-drawer .ant-drawer-header {
+    padding: 0;
+    background-color: #878789;
+}
+
+.close-button {
+    background-color: white;
+}
+
+.ticket-header {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.ticket-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.ticket-header button {
+    margin-right: 10px;
+}
+
+.right-buttons {
+    display: flex;
+    margin-left: auto;
+}
+
+.ticket-title {
+    text-align: center;
+    margin: 0 !important;
+}
+
+.ticket-details {
+    margin-bottom: 20px;
+}
+
+.ticket-detail-item {
+    margin-bottom: 8px;
+}
+
+.ticket-detail-label {
+    display: block;
+    font-weight: normal;
+    color: #595959;
+}
+
+.ticket-detail-value {
+    display: block;
+    margin-left: 10px;
+    color: black;
+    font-weight: 500;
+}
+
+.ticket-steps {
+    margin: 16px 0;
+}
+
+.ticket-info .ant-input {
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.ticket-info a {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.ticket-history {
+    margin-bottom: 20px;
+}
+
+.ticket-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.column-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.column-title .anticon {
+    color: gray;
+}
+
+.column-icons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.small-icon {
+    font-size: 12px;
+}
+
+.divider {
+    width: 100%;
+    border: none;
+    border-top: 1px solid #e8e8e8;
+    margin: 0 0 10px;
+}
+
+.ticket-tab {
+    padding: 3px 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 2px 2px 2px 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.close-tab {
+    margin-left: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 18px;
+    color: inherit;
+}
+
+.ticket-tab.active {
+    background-color: #1677ff;
+    color: white;
+}
+
+.ticket-tab.inactive {
+    background-color: white;
+    color: black;
+}
+
+.delete-button {
+    transition: opacity 0.3s ease;
+}
+
+.delete-button:hover {
+    opacity: 0.5;
+}
+
+.active-button {
+    border-bottom: 2px solid #1677ff; /* Màu xanh dương */
+    padding-bottom: 2px; /* Đảm bảo không bị che khuất */
+}

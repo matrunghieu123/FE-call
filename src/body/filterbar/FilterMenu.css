@@ -1,0 +1,40 @@
+.filter-bar-container {
+  background-color: #f0f2f5;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ant-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.custom-icon {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+}
+
+.custom-icon.rotate {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+  .filter-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ant-space {
+    margin-bottom: 8px;
+  }
+}

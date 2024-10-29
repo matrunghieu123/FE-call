@@ -1,0 +1,81 @@
+.member-list {
+  max-width: 333px; /* Đặt chiều rộng tối đa là cố định */
+  overflow-y: auto;
+}
+
+ul {
+  padding: 0;
+  list-style-type: none;
+}
+
+.member-item {
+  display: flex;
+  align-items: center; /* Căn giữa avatar, tên và thời gian */
+}
+
+.avatar-member-list {
+  border-radius: 50%; /* Bo tròn cho avatar */
+  overflow: hidden; /* Ẩn phần ảnh vượt quá khung bo tròn */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.avatar-member-list img {
+  width: 100%; /* Avatar không được to hơn khung */
+  height: 100%; /* Đảm bảo avatar lấp đầy khung */
+  object-fit: cover; /* Đảm bảo ảnh vừa khung và không bị méo */
+  border-radius: 50%; /* Bo góc cho ảnh để nó luôn tròn */
+}
+
+.member-info {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+}
+
+.member-name {
+  font-size: 1.2em;
+  font-weight: 500;
+  padding: 0 8px;
+}
+
+.member-time {
+  font-size: 0.9em;
+  color: grey;
+}
+
+.member {
+  padding: 20px; /* Kích thước padding */
+  font-size: 1em; /* Kích thước chữ */
+  background: #f5f6fa;
+  cursor: pointer;
+  margin: 10px 5px;
+  border-radius: 8px; /* Bo góc */
+  transition: transform 0.2s ease-in-out; /* Hiệu ứng khi hover */
+}
+
+.member.active {
+  background: #d5d7dc;
+}
+
+.member:hover {
+  background: rgba(169, 169, 169, 0.784);
+  color: #fff;
+  transform: scale(1.03); /* Phóng to khi hover */
+}
+
+.ant-list-item.member {
+  padding: 20px;
+}
+
+.member .ant-list-item-meta-avatar .ant-avatar {
+  width: 40px;
+  height: 40px;
+}
+
+.member .ant-list-item-meta-title {
+  font-size: 1.2em;
+  font-weight: 500;
+}

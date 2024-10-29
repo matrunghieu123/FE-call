@@ -1,0 +1,102 @@
+.ant-drawer-content-wrapper{
+    height: 92% !important;
+    width: 71% !important;
+    top: auto !important;
+}
+
+.ticket-add-content {
+    padding: 20px 0;
+    height: -webkit-fill-available;
+}
+
+.divider {
+    width: 100%;
+    border: none;
+    border-top: 2px solid #e8e8e8;
+    margin: 0 0 10px;
+}
+
+.table-select {
+    height: 40px;
+}
+
+.css-1wy0on6{
+    visibility: hidden;
+}
+
+.css-1p3m7a8-multiValue{
+    font-size: 17px;
+}
+
+.ticket-add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-item {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-item:first-child {
+    flex-basis: 60%;
+}
+
+.form-item:nth-child(2) {
+    flex-basis: 20%;
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+}
+
+.form-item input,
+.form-item textarea,
+.form-item select {
+    border-radius: 4px; /* Bo góc cho input và textarea */
+    border: 1px solid #d9d9d9; /* Màu viền nhạt */
+    padding: 8px;
+    width: 100%;
+}
+
+.ticket-add-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.ticket-add-footer button {
+    margin-left: 10px;
+    border-radius: 4px;
+}
+
+.collapse-button {
+    position: absolute;
+    top: 50%;
+    left: -38px;
+    height: 70px;
+    width: 20px;
+    transform: translateY(-50%);
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    padding: 5px;
+    cursor: pointer;
+    z-index: 1000;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.collapse-icon {
+    height: 20px;
+    width: 12px;
+}
+
+.rotate {
+    transform: rotate(180deg);
+}
