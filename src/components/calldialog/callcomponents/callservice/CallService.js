@@ -91,7 +91,7 @@ const CallModal = ({ inputNumber, closeModal }) => { // Xóa startTime khỏi pr
         });
 
         jsSIPService.makeCall(`sip:${inputNumber}@${sipServer}`); // Sửa đổi để sử dụng inputNumber
-        sessionRef.current = jsSIPService;
+        sessionRef.current = jsSIPService?.session;
       } catch (error) {
         notification.error({ message: 'Lỗi', description: error.message });
         closeModal();

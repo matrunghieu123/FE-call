@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import ColNavbar from '../colnavbar/ColNavbar';
 import MessageList from '../body/message/messagelist/MessageList';
 import SendMessage from '../body/message/sendmessage/SendMessage';
@@ -12,10 +12,10 @@ import {
     loadMessagesFromServer, 
     loadChatHistory, 
     sendMessageToServer, 
-    fetchUsersBySource, 
     connectToWebSocket, 
     onUserConnected 
 } from '../services/api';
+import '../index.css';
 
 const ChatRoom = () => {
     // State declarations
@@ -39,7 +39,6 @@ const ChatRoom = () => {
     const [members, setMembers] = useState([]);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isFilterCleared, setIsFilterCleared] = useState(true);
-    const [jsSIPService, setJsSIPService] = useState(null);
 
     // Refs
     const endOfMessagesRef = useRef(null);
@@ -141,10 +140,6 @@ const ChatRoom = () => {
                 sendPrivateValue(userData.message, files);
             }
         }
-    };
-
-    const handleUsername = (event) => {
-        setUserData({ ...userData, username: event.target.value });
     };
 
     const sendValue = async (message, files = []) => {
@@ -297,275 +292,231 @@ const ChatRoom = () => {
         }
     }, [userData.connected, userData.username]);
 
-    useEffect(() => {
-        const loadUsers = async () => {
-            if (source) {
-                const users = await fetchUsersBySource(source);
-                const newPrivateChats = new Map(users.map(user => [user, []]));
-                setPrivateChats(newPrivateChats);
-            } else {
-                setPrivateChats(new Map());
-            }
-        };
-
-        loadUsers();
-    }, [source]);
-
-    useEffect(() => {
-        // Dọn dẹp khi component unmount
-        return () => {
-            console.log('Đang ngắt kết nối JsSIP...');
-            if (jsSIPService) { // Kiểm tra jsSIPService có khác null không
-                jsSIPService.disconnect(); 
-            }
-        };
-    }, [jsSIPService]); // Thêm jsSIPService vào dependency array
-
     const onSearch = (value) => {
         console.log("Tìm kiếm:", value);
         // Thêm logic tìm kiếm của bạn ở đây
     };
 
     return (
-        <div className="container">
-            {userData.connected ? (
-                <div className="container-1">
-                    <div className="body-nav">
-                        <div className="body-col-nav">
-                            <div className="col-nav">
-                                <ColNavbar
-                                    setTab={handleSetTab}
-                                    handleResetFilter={handleResetFilter}
-                                    setLoginType={setLoginType}
-                                    setSource={setSource}
-                                    setMembers={setMembers}
-                                    baseUrl={baseUrl}
-                                />
-                            </div>
+        <div className="chatroom-container">
+            <div className="chatroom-container-1">
+                <div className="chatroom-body-nav">
+                    <div className="body-col-nav">
+                        <div className="col-nav">
+                            <ColNavbar
+                                setTab={handleSetTab}
+                                handleResetFilter={handleResetFilter}
+                                setLoginType={setLoginType}
+                                setSource={setSource}
+                                setMembers={setMembers}
+                                baseUrl={baseUrl}
+                            />
                         </div>
+                    </div>
 
-                        <div className="chat-box-body">
-                            <div className="chat-box">
-                                <div className='member-search'>
-                                    <div className='search-box'>
-                                        <Input.Search
-                                            className='search-button'
-                                            placeholder="Tìm kiếm"
-                                            allowClear
-                                            onSearch={onSearch}
-                                            size='large'
-                                            style={{ borderRadius: '4px', borderColor: '#d9d9d9' }}
-                                        />
-                                    </div>
+                    <div className="chat-box-body">
+                        <div className="chat-box">
+                            <div className='member-search'>
+                                <div className='search-box'>
+                                    <Input.Search
+                                        className='search-button'
+                                        placeholder="Tìm kiếm"
+                                        allowClear
+                                        onSearch={onSearch}
+                                        size='large'
+                                        style={{ borderRadius: '4px', borderColor: '#d9d9d9' }}
+                                    />
+                                </div>
 
-                                    <div className='search-box'>
-                                        <Input.Search
-                                            className='search-button'
-                                            placeholder="Tìm kiếm từ ngày đến ngày ..."
-                                            allowClear
-                                            size='large'
-                                            style={{ borderRadius: '4px', borderColor: '#d9d9d9' }}
-                                        />
-                                    </div>
+                                <div className='search-box'>
+                                    <Input.Search
+                                        className='search-button'
+                                        placeholder="Tìm kiếm từ ngày đến ngày ..."
+                                        allowClear
+                                        size='large'
+                                        style={{ borderRadius: '4px', borderColor: '#d9d9d9' }}
+                                    />
+                                </div>
 
-                                    <div
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '8px',
+                                        margin: '16px',
+                                    }}
+                                >
+                                    <span onClick={toggleUpdateOrder} style={{ cursor: 'pointer' }}>
+                                        Thời gian cập nhật
+                                        <span style={{ marginLeft: '5px', fontSize: '12px' }}>
+                                            {isUpdatedAsc ? '▼' : '▲'}
+                                        </span>
+                                    </span>
+                                    <span
+                                        onClick={toggleCuuNhat}
                                         style={{
+                                            cursor: 'pointer',
                                             display: 'flex',
-                                            justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            marginBottom: '8px',
-                                            margin: '16px',
                                         }}
                                     >
-                                        <span onClick={toggleUpdateOrder} style={{ cursor: 'pointer' }}>
-                                            Thời gian cập nhật
-                                            <span style={{ marginLeft: '5px', fontSize: '12px' }}>
-                                                {isUpdatedAsc ? '▼' : '▲'}
-                                            </span>
-                                        </span>
+                                        {isCuuNhatActive ? 'Mới nhất' : 'Cũ nhất'}
                                         <span
-                                            onClick={toggleCuuNhat}
                                             style={{
-                                                cursor: 'pointer',
+                                                marginLeft: '5px',
                                                 display: 'flex',
+                                                flexDirection: 'column',
                                                 alignItems: 'center',
+                                                color: isCuuNhatActive ? 'lightgray' : 'black'
                                             }}
                                         >
-                                            {isCuuNhatActive ? 'Mới nhất' : 'Cũ nhất'}
                                             <span
                                                 style={{
-                                                    marginLeft: '5px',
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
+                                                    fontSize: '12px',
+                                                    transform: 'scale(1, 0.6)',
                                                     color: isCuuNhatActive ? 'lightgray' : 'black'
                                                 }}
                                             >
-                                                <span
-                                                    style={{
-                                                        fontSize: '12px',
-                                                        transform: 'scale(1, 0.6)',
-                                                        color: isCuuNhatActive ? 'lightgray' : 'black'
-                                                    }}
-                                                >
-                                                    &#9650;
-                                                </span>
-                                                <span
-                                                    style={{
-                                                        fontSize: '12px',
-                                                        transform: 'scale(1, 0.6)',
-                                                        marginTop: '-8px',
-                                                        color: isCuuNhatActive ? 'black' : 'lightgray'
-                                                    }}
-                                                >
-                                                    &#9660;
-                                                </span>
+                                                &#9650;
+                                            </span>
+                                            <span
+                                                style={{
+                                                    fontSize: '12px',
+                                                    transform: 'scale(1, 0.6)',
+                                                    marginTop: '-8px',
+                                                    color: isCuuNhatActive ? 'black' : 'lightgray'
+                                                }}
+                                            >
+                                                &#9660;
                                             </span>
                                         </span>
-                                    </div>
+                                    </span>
+                                </div>
 
-                                    <div className='member-box'>
-                                        <div className='member-list'>
-                                            <MemberList
-                                                privateChats={privateChats}
-                                                setTab={handleSetTab}
-                                                tab={tab}
-                                                userData={userData}
-                                                setAvatarColors={handleSetAvatarColors}
-                                                source={source}
-                                                members={members}
-                                            />
-                                        </div>
+                                <div className='member-box'>
+                                    <div className='member-list'>
+                                        <MemberList
+                                            privateChats={privateChats}
+                                            setTab={handleSetTab}
+                                            tab={tab}
+                                            userData={userData}
+                                            setAvatarColors={handleSetAvatarColors}
+                                            source={source}
+                                            members={members}
+                                        />
                                     </div>
                                 </div>
-                                <div className="chat-content">
-                                    <div
-                                        style={{
-                                            margin: '16px 16px 0px 12px',
-                                        }}
-                                    >
-                                        <FilterBar onClearFilter={handleClearFilter} />
+                            </div>
+                            <div className="chat-content">
+                                <div
+                                    style={{
+                                        margin: '16px 16px 0px 12px',
+                                    }}
+                                >
+                                    <FilterBar onClearFilter={handleClearFilter} />
+                                </div>
+
+                                {isFilterCleared ? (
+                                    <div className="empty-screen">
+                                        <p>Chưa chọn cuộc hội thoại</p>
                                     </div>
-
-                                    {isFilterCleared ? (
-                                        <div className="empty-screen">
-                                            <p>Chưa chọn cuộc hội thoại</p>
-                                        </div>
-                                    ) : (
-                                        <div className='chat-border'>
-                                            <div className='chat-input'>
-                                                <div className='text-input'>
-                                                    <div>
-                                                        <div
-                                                            style={{
-                                                                overflow: 'hidden',
-                                                            }}
-                                                        >
-                                                            <MessageInfor currentCustomer={currentCustomer} userData={userData} />
-                                                        </div>
+                                ) : (
+                                    <div className='chat-border'>
+                                        <div className='chat-input'>
+                                            <div className='text-input'>
+                                                <div>
+                                                    <div
+                                                        style={{
+                                                            overflow: 'hidden',
+                                                        }}
+                                                    >
+                                                        <MessageInfor currentCustomer={currentCustomer} userData={userData} />
                                                     </div>
-                                                    <div className='chat-input-box'>
+                                                </div>
+                                                <div className='chat-input-box'>
 
-                                                        <div className='chat-input-box-1'>
-                                                            <div style={{
-                                                                flex: 1,
-                                                                display: 'flex',
-                                                                overflow: 'hidden',
-                                                                position: 'relative',
-                                                                flexDirection: 'column',
-                                                            }}>
-                                                                <MessageList
-                                                                    chats={tab === "CHATROOM" ? publicChats : (privateChats?.get(tab) || [])}
-                                                                    tab={tab} userData={userData} endOfMessagesRef={endOfMessagesRef} avatarColors={avatarColors}
-                                                                />
-                                                                {!joinedMembers.get(tab) && (
-                                                                    <div style={{
-                                                                        display: 'flex',
-                                                                        justifyContent: 'center',
-                                                                        marginTop: '10px',
-                                                                    }}>
-                                                                        <Button
-                                                                            type="primary"
-                                                                            onClick={() => handleJoin(tab)}
-                                                                            style={{
-                                                                                width: 'fit-content',
-                                                                            }}
-                                                                        >
-                                                                            Tham gia
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            {joinedMembers.get(tab) && (
+                                                    <div className='chat-input-box-1'>
+                                                        <div style={{
+                                                            flex: 1,
+                                                            display: 'flex',
+                                                            overflow: 'hidden',
+                                                            position: 'relative',
+                                                            flexDirection: 'column',
+                                                        }}>
+                                                            <MessageList
+                                                                chats={tab === "CHATROOM" ? publicChats : (privateChats?.get(tab) || [])}
+                                                                tab={tab} userData={userData} endOfMessagesRef={endOfMessagesRef} avatarColors={avatarColors}
+                                                            />
+                                                            {!joinedMembers.get(tab) && (
                                                                 <div style={{
-                                                                    backgroundColor: 'white',
                                                                     display: 'flex',
                                                                     justifyContent: 'center',
-                                                                    alignItems: 'center',
-                                                                    flexDirection: 'column',
+                                                                    marginTop: '10px',
                                                                 }}>
-                                                                    <SendMessage
-                                                                        userData={userData}
-                                                                        handleMessage={handleMessage}
-                                                                        handleKeyPress={handleKeyPress}
-                                                                        sendValue={sendValue}
-                                                                        sendPrivateValue={sendPrivateValue}
-                                                                        tab={tab}
-                                                                    />
                                                                     <Button
-                                                                        type="default"
-                                                                        onClick={() => handleTransfer(tab)}
+                                                                        type="primary"
+                                                                        onClick={() => handleJoin(tab)}
                                                                         style={{
-                                                                            marginTop: '10px',
-                                                                            backgroundColor: '#0ec50e',
-                                                                            color: 'white',
+                                                                            width: 'fit-content',
                                                                         }}
                                                                     >
-                                                                        Chuyển nhân viên phụ trách
+                                                                        Tham gia
                                                                     </Button>
                                                                 </div>
                                                             )}
                                                         </div>
+                                                        {joinedMembers.get(tab) && (
+                                                            <div style={{
+                                                                backgroundColor: 'white',
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
+                                                                flexDirection: 'column',
+                                                            }}>
+                                                                <SendMessage
+                                                                    userData={userData}
+                                                                    handleMessage={handleMessage}
+                                                                    handleKeyPress={handleKeyPress}
+                                                                    sendValue={sendValue}
+                                                                    sendPrivateValue={sendPrivateValue}
+                                                                    tab={tab}
+                                                                />
+                                                                <Button
+                                                                    type="default"
+                                                                    onClick={() => handleTransfer(tab)}
+                                                                    style={{
+                                                                        marginTop: '10px',
+                                                                        backgroundColor: '#0ec50e',
+                                                                        color: 'white',
+                                                                    }}
+                                                                >
+                                                                    Chuyển nhân viên phụ trách
+                                                                </Button>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
 
-                                            <div className='chat-tool-wrapper'>
-                                                <div className='chat-tool-body'>
-                                                    <ChatTool
-                                                        avatar={userData.username[0].toUpperCase()}
-                                                        userName={userData.username}
-                                                        isJoined={joinedMembers.get(tab)}
-                                                    />
-                                                </div>
+                                        <div className='chat-tool-wrapper'>
+                                            <div className='chat-tool-body'>
+                                                <ChatTool
+                                                    avatar={userData.username ? userData.username[0].toUpperCase() : ''}
+                                                    userName={userData.username}
+                                                    isJoined={joinedMembers.get(tab)}
+                                                />
                                             </div>
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
-                    <CallDialog members={members} />
                 </div>
-            ) : (
-                <div className="register">
-                    {loginType === "CHATROOM" ? (
-                        <>
-                            <input
-                                className='name-input'
-                                id="user-name"
-                                placeholder="Nhập tên của bạn"
-                                name="userName"
-                                value={userData.username}
-                                onChange={handleUsername}
-                            />
-                            <button onClick={connect}>Kết nối</button>
-                        </>
-                    ) : (
-                        <p>Vui lòng đăng nhập từ ứng dụng {loginType}</p>
-                    )}
-                </div>
-            )}
+                <CallDialog members={members} />
+            </div>
         </div>
     );
 };
