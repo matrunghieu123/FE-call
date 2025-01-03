@@ -5,7 +5,7 @@ import IconPhone from './call-icon/phone.png';
 import IconArrow from '../../body/message/messageinfor/ticket/icon/play.png';
 import './CallDialog.css';
 import CallFooter from './callcomponents/CallFooter';
-import { getAuthToken, getCallRecord } from '../../services/api';
+import { getAuthToken, getCallRecord } from '../../services/call_api/Callapi';
 
 const CallDialog = ({ members }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -164,10 +164,11 @@ const CallDialog = ({ members }) => {
   };
 
   return (
-    <>
+    <div className="call-dialog-container">
       <Tooltip title="Gọi điện">
         <Button
           type="primary"
+          className="btn-call-main"
           icon={
             <img
               src={IconPhone}
@@ -181,38 +182,16 @@ const CallDialog = ({ members }) => {
           }
           onClick={showModal}
           size="large"
-          style={{
-            position: 'fixed',
-            right: 30,
-            bottom: 30,
-            height: 55,
-            width: 55,
-            borderRadius: '10px',
-          }}
         />
       </Tooltip>
 
       {/* Modal */}
       {isModalVisible && (
-        <div
-          style={{
-            position: 'fixed',
-            right: 20,
-            top: '28%',
-            height: '70vh',
-            width: '41vh',
-            zIndex: 1000,
-            backgroundColor: '#fff',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-            borderRadius: 12,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-          }}
-        >
+        <div className="call-dialog">
           {/* Nút đóng */}
           <Button
             type="text"
+            className="call-dialog-ant-btn-text"
             icon={
               <img 
                 src={IconClose} 
@@ -224,16 +203,6 @@ const CallDialog = ({ members }) => {
               />
             }
             onClick={handleCancel}
-            style={{
-              top: 0,
-              left: -47,
-              position: 'absolute',
-              borderRadius: 12,
-              backgroundColor: 'rgb(210 214 220)',
-              height: 35,
-              width: 35,
-              zIndex: 1000,
-            }}
           />
 
           {/* Nội dung của modal */}
@@ -241,15 +210,6 @@ const CallDialog = ({ members }) => {
             {/* Phần trên cùng */}
             <div 
               className="clickable-div"
-              style={{ 
-                cursor: 'pointer',
-                height: '75px',
-                display: 'flex',
-                padding: '0 24px',
-                alignItems: 'center',
-                borderBottom: '1px solid rgba(0, 177, 255, 0.1)',
-                justifyContent: 'space-between',
-              }}
               onClick={toggleDropdown}
             >
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -279,15 +239,7 @@ const CallDialog = ({ members }) => {
             {isDropdownVisible && (
               <div 
                 ref={dropdownRef}
-                style={{ 
-                  position: 'absolute',  
-                  right: '103%',
-                  boxShadow: '0 2px 8px rgb(0, 0, 0, 0.15)', 
-                  borderRadius: 8,
-                  width: '80%',
-                  zIndex: 2000,
-                  backgroundColor: 'white',
-                }}
+                className="phone-list"
               >
                 <div 
                   style={{ 
@@ -325,14 +277,7 @@ const CallDialog = ({ members }) => {
 
             {/* Phần giữa */}
             <div 
-              style={{ 
-                gap: '16px',
-                flex: 1,
-                display: 'flex',
-                padding: '16px 0',
-                borderBottom: '1px solid rgba(0, 177, 255, 0.1)',
-                flexDirection: 'column', 
-              }}
+              className="middle-section"
             >
             </div>
 
@@ -360,7 +305,7 @@ const CallDialog = ({ members }) => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

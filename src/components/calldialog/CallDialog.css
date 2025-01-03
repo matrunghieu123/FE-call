@@ -1,196 +1,205 @@
-/* Nút gọi điện */
-.btn-call {
-    padding: 4px !important;
-    background-color: transparent;
-    width: 40px !important;
-    height: 40px !important;
-    border-radius: 10px;
-    margin: 0 3px;
-}
+/* Thêm lớp cha .call-dialog-container để bao bọc tất cả các lớp khác */
+.call-dialog-container {
+    /* Nút gọi điện */
+    .btn-call-main {
+        position: fixed;
+        right: 30px;
+        bottom: 30px;
+        height: 55px;
+        width: 55px;
+        border-radius: 10px;
+    }
+    .btn-call {
+        height: 55px;
+        width: 55px;
+        border-radius: 10px;
+    }
 
-.btn-call.active {
-    background-color: #e0f7fa;
-}
+    .btn-call.active {
+        background-color: #e0f7fa;
+    }
 
-/* Modal */
-.modal {
-    position: fixed;
-    right: 20px;
-    top: 28%;
-    height: 70vh;
-    width: 41vh;
-    z-index: 1000;
-    background-color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
+    /* Modal */
+    .call-dialog {
+        position: fixed;
+        right: 20px;
+        top: 28%;
+        height: 70vh;
+        width: 41vh;
+        z-index: 1000;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
 
-/* Nút đóng */
-.close-button {
-    top: 0;
-    left: -47px;
-    position: absolute;
-    border-radius: 12px;
-    background-color: rgb(210, 214, 220);
-    height: 35px;
-    width: 35px;
-    z-index: 1000;
-}
+    /* Nút đóng */
+    .call-dialog-ant-btn-text {
+        top: 0;
+        left: -47px;
+        position: absolute;
+        border-radius: 12px;
+        background-color: rgb(210, 214, 220);
+        height: 35px;
+        width: 35px;
+        z-index: 1000;
+    }
 
-/* Phần trên cùng */
-.clickable-div {
-    cursor: pointer;
-    height: 75px;
-    display: flex;
-    padding: 0 24px;
-    align-items: center;
-    border-bottom: 1px solid rgba(0, 177, 255, 0.1);
-    justify-content: space-between;
-}
+    /* Phần trên cùng */
+    .clickable-div {
+        cursor: pointer;
+        height: 75px;
+        display: flex;
+        padding: 0 24px;
+        align-items: center;
+        border-bottom: 1px solid rgba(0, 177, 255, 0.1);
+        justify-content: space-between;
+    }
 
-.clickable-div:hover .clickable-button {
-    background-color: #f0f0f0;
-    transition: background-color 0.3s;
-}
+    .clickable-button {
+        font-size: 16px;
+        color: #000;
+    }
 
-.clickable-button {
-    transition: background-color 0.3s;
-}
+    /* Danh sách số điện thoại */
+    .phone-list {
+        position: absolute;
+        right: 103%;
+        box-shadow: 0 2px 8px rgb(0, 0, 0, 0.15);
+        border-radius: 8px;
+        width: 80%;
+        z-index: 2000;
+        background-color: white;
+    }
 
-/* Danh sách số điện thoại */
-.phone-list {
-    position: absolute;
-    right: 103%;
-    box-shadow: 0 2px 8px rgb(0, 0, 0, 0.15);
-    border-radius: 8px;
-    width: 80%;
-    z-index: 2000;
-    background-color: white;
-}
+    .phone-list-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(0, 177, 255, 0.1);
+        display: flex;
+        border: none;
+        margin: 5px 0;
+    }
 
-.phone-list-item {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid rgba(0, 177, 255, 0.1);
-    display: flex;
-    border: none;
-    margin: 5px 0;
-}
+    .phone-list-item:hover {
+        background-color: #f0f0f0;
+        border-radius: 8px;
+    }
 
-.phone-list-item:hover {
-    background-color: #f0f0f0;
-    border-radius: 8px;
-}
+    /* Phần giữa */
+    .middle-section {
+        gap: 16px;
+        flex: 1;
+        display: flex;
+        padding: 16px 0;
+        border-bottom: 1px solid rgba(0, 177, 255, 0.1);
+        flex-direction: column;
+    }
 
-/* Phần giữa */
-.middle-section {
-    gap: 16px;
-    flex: 1;
-    display: flex;
-    padding: 16px 0;
-    border-bottom: 1px solid rgba(0, 177, 255, 0.1);
-    flex-direction: column;
-}
+    /* Phần dưới (CallFooter) */
+    .custom-input {
+        position: relative;
+        top: -20px;
+        left: -10px;
+    }
 
-/* Phần dưới (CallFooter) */
-.custom-input {
-    position: relative;
-    top: -20px;
-    left: -10px;
-}
+    .icon-call {
+        height: 18px;
+        width: 18px;
+        font-size: 18px;
+        filter: brightness(1) contrast(10);
+    }
 
-.icon-call {
-    height: 18px;
-    width: 18px;
-    font-size: 18px;
-    filter: brightness(1) contrast(10);
-}
+    .notification-badge {
+        position: absolute;
+        top: 16px;
+        right: 17px;
+        transform: translate(50%, -50%);
+        background-color: red;
+        color: white;
+        border-radius: 50%;
+        font-size: 10px;
+        width: 15px;
+        height: 15px;
+        padding: 2px 6px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-.notification-badge {
-    position: absolute;
-    top: 0px;
-    right: 3px;
-    background-color: red;
-    border-radius: 50%;
-    color: white;
-    font-size: 10px;
-    width: 15px;
-    height: 15px;
-}
+    .call-keyboard {
+        display: flex;
+        justify-content: center;
+        border: none;
+        width: 100%;
+        height: 100%;
+        background-color: white;
+    }
 
-.call-keyboard {
-    display: flex;
-    justify-content: center;
-    border: none;
-    width: 100%;
-    height: 100%;
-    background-color: white;
-}
+    .keyboard-btn {
+        width: 48px;
+        height: 48px;
+        border: none;
+        background-color: white;
+        padding: 16px 6px;
+        margin: 4px 24px;
+        transition: background-color 0.3s;
+    }
 
-.keyboard-btn {
-    width: 48px;
-    height: 48px;
-    border: none;
-    background-color: white;
-    padding: 16px 6px;
-    margin: 4px 24px;
-    transition: background-color 0.3s;
-}
+    .keyboard-btn:hover {
+        background-color: rgb(210, 214, 220) !important;
+        color: black !important;
+        border-radius: 10px;
+    }
 
-.keyboard-btn:hover {
-    background-color: rgb(210, 214, 220) !important;
-    color: black !important;
-    border-radius: 10px;
-}
+    .custom-input .ant-input-clear-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: black;
+        font-size: 18px;
+    }
 
-.custom-input .ant-input-clear-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: black;
-    font-size: 18px;
-}
+    .branch-list {
+        position: absolute;
+        top: 310px;
+        right: 200px;
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        border-radius: 8px;
+        padding: 10px;
+        z-index: 1000;
+        width: 300px;
+        height: 250px;
+        overflow-y: auto;
+    }
 
-.branch-list {
-    position: absolute;
-    top: 310px;
-    right: 200px;
-    background-color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    padding: 10px;
-    z-index: 1000;
-    width: 300px;
-    height: 250px;
-    overflow-y: auto;
-}
+    .branch-member-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 5px;
+    }
 
-.branch-member-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 5px;
-}
+    .branch-member-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
 
-.branch-member-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    margin-right: 10px;
-}
+    .branch-member-name {
+        font-weight: bold;
+        display: flex;
+    }
 
-.branch-member-name {
-    font-weight: bold;
-    display: flex;
-}
+    .branch-member-email {
+        color: gray;
+        display: flex;
+    }
 
-.branch-member-email {
-    color: gray;
-    display: flex;
-}
-
-.branch-input {
-    margin-bottom: 10px;
+    .branch-input {
+        margin-bottom: 10px;
+    }
 }

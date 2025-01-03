@@ -1,7 +1,7 @@
 import { notification, Modal, Spin } from 'antd';
-import React, { useState, useEffect, useRef, useCallback } from 'react'; // Thêm useCallback
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { getAuthToken, getCallRecord } from '../../../../services/api';
+import { getAuthToken, getCallRecord } from '../../../../services/call_api/Callapi';
 import JsSIPService from '../../../../services/call_api/JsSIPService';
 
 // Hàm tiện ích để ghi log trạng thái kết nối
@@ -10,13 +10,12 @@ const logConnectionStatus = (status) => {
 };
 
 // Component quản lý giao diện cuộc gọi
-const CallModal = ({ inputNumber, closeModal }) => { // Xóa startTime khỏi props
+const CallModal = ({ inputNumber, closeModal }) => {
   const [duration, setDuration] = useState(0);
   const [connecting, setConnecting] = useState(true);
   const sessionRef = useRef(null);
-  const startTimeRef = useRef(null); // Thêm ref để lưu thời gian bắt đầu
+  const startTimeRef = useRef(null);
 
-  // Định nghĩa các callback sử dụng useCallback
   const onCallAccepted = useCallback(() => {
     setConnecting(false); // Ngừng hiển thị Spin khi cuộc gọi được chấp nhận
     startTimeRef.current = new Date(); // Lưu thời gian bắt đầu khi cuộc gọi được chấp nhận
@@ -52,6 +51,38 @@ const CallModal = ({ inputNumber, closeModal }) => { // Xóa startTime khỏi pr
     closeModal();
     sessionRef.current?.terminate();
   }, [closeModal]);
+
+  const onIncomingCall = useCallback((session) => {
+    const incomingNumber = session.remote_identity.uri.user;
+    
+    if (incomingNumber === '0949092908') {
+        notification.info({
+            message: 'Cuộc gọi đến',
+            description: `Có cuộc gọi đến từ số: ${incomingNumber}`,
+        });
+
+        // Hiển thị modal với nút Nghe và Hủy
+        Modal.confirm({
+            title: 'Cuộc gọi đến',
+            content: `Có cuộc gọi đến từ số: ${incomingNumber}`,
+            okText: 'Nghe',
+            cancelText: 'Hủy',
+            onOk: () => {
+                session.answer();
+                onCallAccepted();
+                // Hiển thị giao diện nghe
+                // Ví dụ: set một state để hiển thị phần nghe
+            },
+            onCancel: () => {
+                session.terminate();
+                closeModal();
+            },
+        });
+    } else {
+        console.log(`Cuộc gọi từ số không mong muốn: ${incomingNumber}`);
+        session.terminate(); // Từ chối cuộc gọi nếu không phải số mong muốn
+    }
+  }, [onCallAccepted, closeModal]);
 
   // Cập nhật thời gian gọi
   useEffect(() => {
@@ -90,7 +121,10 @@ const CallModal = ({ inputNumber, closeModal }) => { // Xóa startTime khỏi pr
           else if (status === 'ended' || status === 'failed') onCallEnded();
         });
 
-        jsSIPService.makeCall(`sip:${inputNumber}@${sipServer}`); // Sửa đổi để sử dụng inputNumber
+        // Đăng ký xử lý cuộc gọi đến
+        jsSIPService.onIncomingCall(onIncomingCall);
+
+        jsSIPService.makeCall(`sip:${inputNumber}@${sipServer}`);
         sessionRef.current = jsSIPService?.session;
       } catch (error) {
         notification.error({ message: 'Lỗi', description: error.message });
@@ -103,7 +137,7 @@ const CallModal = ({ inputNumber, closeModal }) => { // Xóa startTime khỏi pr
     return () => {
       sessionRef.current?.isInProgress && sessionRef.current.terminate();
     };
-  }, [inputNumber, closeModal, onCallAccepted, onCallEnded, onCallFailed]); // Giữ các hàm callback trong phụ thuộc
+  }, [inputNumber, closeModal, onCallAccepted, onCallEnded, onCallFailed, onIncomingCall]);
 
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;

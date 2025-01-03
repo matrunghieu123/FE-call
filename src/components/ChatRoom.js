@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import ColNavbar from '../colnavbar/ColNavbar';
 import MessageList from '../body/message/messagelist/MessageList';
 import SendMessage from '../body/message/sendmessage/SendMessage';
@@ -9,18 +9,19 @@ import ChatTool from '../body/chattool/ChatTool';
 import CallDialog from './calldialog/CallDialog';
 import { Input, Button } from 'antd';
 import { 
-    loadMessagesFromServer, 
-    loadChatHistory, 
-    sendMessageToServer, 
-    connectToWebSocket, 
-    onUserConnected 
-} from '../services/api';
+    loadMessagesFromServer
+} from '../services/chat_api';
 import '../index.css';
+import { useSelector } from 'react-redux';
+import StompService from '../services/stomp_service';
+import chatAPI from '../services/chat_api';
 
 const ChatRoom = () => {
+    // Lấy dữ liệu từ authReducer
+    const authData = useSelector((state) => state.authReducer.data);
+
     // State declarations
     const [privateChats, setPrivateChats] = useState(() => new Map());
-    const [publicChats, setPublicChats] = useState([]);
     const [tab, setTab] = useState("CHATROOM");
     const [loginType, setLoginType] = useState("CHATROOM");
     const [userData, setUserData] = useState({
@@ -39,17 +40,19 @@ const ChatRoom = () => {
     const [members, setMembers] = useState([]);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [isFilterCleared, setIsFilterCleared] = useState(true);
+    const [currentMember, setCurrentMember] = useState(null);
+    const [chatGroupId, setChatGroupId] = useState(null);
+    // Message data
+    const [messageData, setMessageData] = useState({});
 
     // Refs
     const endOfMessagesRef = useRef(null);
-    const stompClientRef = useRef(null);
+    const stompServiceRef = useRef(null);
 
     // Constants
-    const baseUrl = process.env.REACT_APP_BASE_URL;
+    const baseUrl = 'http://118.70.155.34:8000';
 
     // Functions
-    const getAvatar = (name) => null;
-
     const toggleUpdateOrder = () => {
         setIsUpdatedAsc(!isUpdatedAsc);
     };
@@ -58,21 +61,37 @@ const ChatRoom = () => {
         setIsCuuNhatActive(!isCuuNhatActive);
     };
 
+    const stompService = StompService.getInstance(userData.username);
+
     const connect = () => {
-        connectToWebSocket(stompClientRef, onConnected, onError);
+        stompService.connect();
+        stompService.setOnMessageCallback(onMessageReceived);
+        console.log("Connected to stomp service");
     };
 
-    const onConnected = () => {
-        onUserConnected(stompClientRef, userData, onMessageReceived, onPrivateMessage);
-        setUserData({ ...userData, connected: true });
-    };
+    const processedMessages = new Set();
 
-    const onMessageReceived = (payload) => {
+     const onMessageReceived = (payload) => {
         try {
+            console.log("Message received:", payload);
+            if (!payload || !payload.body) {
+                throw new Error("Payload không hợp lệ");
+            }
+
             var payloadData = JSON.parse(payload.body);
             payloadData.fileUrl = payloadData.fileUrl || '';
             payloadData.fileName = payloadData.fileName || '';
             payloadData.fileType = payloadData.fileType || 'text';
+
+            if (processedMessages.has(payloadData.id)) {
+                return;
+            }
+            processedMessages.add(payloadData.id);
+
+            if (privateChats.has(payloadData.id)) {
+                console.warn("Tin nhắn đã được xử lý:", payloadData.id);
+                return;
+            }
 
             switch (payloadData.status) {
                 case "JOIN":
@@ -82,12 +101,16 @@ const ChatRoom = () => {
                     }
                     break;
                 case "MESSAGE":
-                    if (payloadData.receiverName === "Chat chung") {
-                        setPublicChats(prevPublicChats =>
-                            [...prevPublicChats, payloadData].sort((a, b) => new Date(a.time) - new Date(b.time))
-                        );
+                    if (payloadData.receiverName) {
+                        setPrivateChats(prevChats => {
+                            const newChats = new Map(prevChats);
+                            const chatList = newChats.get(payloadData.receiverName) || [];
+                            chatList.push(payloadData);
+                            newChats.set(payloadData.receiverName, chatList);
+                            return newChats;
+                        });
                     } else {
-                        addMessageToPrivateChat(payloadData);
+                        console.error("receiverName is undefined in payloadData");
                     }
                     break;
                 default:
@@ -97,33 +120,6 @@ const ChatRoom = () => {
         } catch (error) {
             console.error("Lỗi khi xử lý tin nhắn nhận được:", error);
         }
-    };
-
-    const onPrivateMessage = (payload) => {
-        try {
-            const payloadData = JSON.parse(payload.body);
-            if (payloadData.senderName !== userData.username) {
-                addMessageToPrivateChat(payloadData);
-            }
-        } catch (error) {
-            console.error("Lỗi khi xử lý tin nhắn riêng:", error);
-        }
-    };
-
-    const addMessageToPrivateChat = (message) => {
-        setPrivateChats(prevChats => {
-            const newChats = new Map(prevChats);
-            const chatList = newChats.get(message.receiverName) || [];
-            const messageId = `${message.senderName}-${message.time}`;
-            if (!chatList.some(msg => `${msg.senderName}-${msg.time}` === messageId)) {
-                newChats.set(message.receiverName, [...chatList, { ...message, id: messageId }]);
-            }
-            return newChats;
-        });
-    };
-
-    const onError = (err) => {
-        console.log("Lỗi kết nối WebSocket:", err);
     };
 
     const handleMessage = (event) => {
@@ -136,98 +132,96 @@ const ChatRoom = () => {
             const files = selectedFiles.map(fileObj => fileObj.file);
             if (tab === "CHATROOM") {
                 sendValue(userData.message, files);
-            } else {
-                sendPrivateValue(userData.message, files);
             }
         }
     };
 
-    const sendValue = async (message, files = []) => {
-        if (stompClientRef.current && (message.trim() !== '' || files.length > 0)) {
-            try {
-                let fileUrl = null;
-                let fileName = null;
-                let fileType = null;
+    // Phương thức để xử lý thông tin file và trả về chuỗi
+    const getFileDetailsString = (files) => {
+        if (files.length === 0) return null;
 
-                if (files.length > 0) {
-                    const response = await sendMessageToServer(userData.username, "Chat chung", message, files[0]);
-                    if (response.data && response.data.fileUrl) {
-                        const relativePath = response.data.fileUrl.replace(/^.*[\\/]/, '');
-                        fileUrl = `${baseUrl}/uploads/${relativePath}`;
-                        fileName = files[0].name;
-                        fileType = files[0].type;
-                    }
-                }
+        const fileUrl = URL.createObjectURL(files[0]);
+        return {
+            uri: `${fileUrl.split('/').pop()}fileUrl_${files[0].name}`,
+            type: files[0].type,
+            name: files[0].name,
+        };
+    };
 
+    // Hàm sendValue sau khi chỉnh sửa
+    const sendValue = useCallback(async (message, files = []) => {
+        console.log("Sending message:", message, "with files:", files);
+
+        if (!stompService.isConnected()) {
+            console.warn('Cannot send message. Not connected.');
+            return;
+        }
+
+        const messageStr = String(message);
+        if (messageStr.trim() === '' && files.length === 0) {
+            console.warn('Cannot send message. Message is empty.');
+            return;
+        }
+
+        try {
+            const file = getFileDetailsString(files);
+            if (file) {
+                console.log('File to upload:', file);
+                
+                const formData = new FormData();
+                formData.append('adClientId', String(messageData.adClientId));
+                formData.append('adOrgId', String(messageData.adOrgId));
+                formData.append('adUserId', String(currentMember.conversationId));
+                formData.append('cmChatGroupId', String(messageData.cmChatGroupId));
+                formData.append('file', files[0]);
+
+                await chatAPI.HandleUploadFile(formData);
+            }
+
+            if (messageStr) {
                 const chatMessage = {
-                    senderName: userData.username,
-                    receiverName: "Chat chung",
-                    message: message || "",
-                    status: "MESSAGE",
-                    fileType: fileType,
-                    fileUrl: fileUrl,
-                    time: new Date().toISOString()
+                    adClientId: messageData.adClientId,
+                    adOrgId: messageData.adOrgId,
+                    adUserId: messageData.adUserId,
+                    cmChatGroupId: messageData.cmChatGroupId,
+                    contentText: messageStr,
+                    dataType: files.length > 0 ? "File" : "Text",
+                    createdBy: messageData.createdBy,
+                    updatedBy: messageData.updatedBy,
+                    created: new Date().toISOString()
                 };
 
-                stompClientRef.current.send("/app/message/public", {}, JSON.stringify(chatMessage));
-                setPublicChats(prevPublicChats => [...prevPublicChats, { ...chatMessage, fileName }]);
+                console.log('Sending chat message:', chatMessage);
+                stompService.sendMessage(chatMessage);
+
+                setPrivateChats(prevChats => {
+                    const newChats = new Map(prevChats);
+                    const chatList = newChats.get("CHATROOM") || [];
+                    chatList.push({ ...chatMessage, fileName: file ? file.name : null });
+                    newChats.set("CHATROOM", chatList);
+                    return newChats;
+                });
+
                 setUserData({ ...userData, message: "" });
-            } catch (error) {
-                console.error("Lỗi khi gửi tin nhắn:", error);
             }
+        } catch (error) {
+            console.error("Error sending message:", error);
         }
-    };
+    }, [stompService, messageData, userData]);
 
-    const sendPrivateValue = async (message, files = []) => {
-        if (stompClientRef.current && (message.trim() !== '' || files.length > 0)) {
-            try {
-                let fileUrl = null;
-                let fileName = null;
-                let fileType = null;
-
-                if (files.length > 0) {
-                    const response = await sendMessageToServer(userData.username, tab, message, files[0]);
-                    const responseData = response.data;
-
-                    if (responseData && responseData.fileUrl) {
-                        const relativePath = responseData.fileUrl.replace(/^.*[\\/]/, '');
-                        fileUrl = `${baseUrl}/uploads/${relativePath}`;
-                        fileName = files[0].name;
-                        fileType = files[0].type;
-                    }
-                }
-
-                const chatMessage = {
-                    senderName: userData.username,
-                    receiverName: tab,
-                    message: message || "",
-                    status: "MESSAGE",
-                    fileType: fileType,
-                    fileUrl: fileUrl,
-                    time: new Date().toISOString()
-                };
-
-                stompClientRef.current.send("/app/private-message", {}, JSON.stringify(chatMessage));
-                addMessageToPrivateChat({ ...chatMessage, fileName });
-                setUserData({ ...userData, message: "" });
-            } catch (error) {
-                console.error("Lỗi khi gửi tin nhắn:", error);
-            }
-        }
-    };
 
     const handleClearFilter = () => {
         setIsFilterCleared(true);
     };
 
-    const handleResetFilter = () => {
-        setIsFilterCleared(false);
-    };
-
     const handleJoin = (memberName) => {
-        setJoinedMembers(prev => new Map(prev).set(memberName, true));
+        setJoinedMembers(prev => {
+            const newJoinedMembers = new Map(prev);
+            newJoinedMembers.set(memberName, true);
+            return newJoinedMembers;
+        });
+
         if (memberName === tab) {
-            setIsJoined(true);
             const systemMessage = {
                 senderName: 'System',
                 message: `${userData.username} đã tham gia cuộc hội thoại.`,
@@ -235,16 +229,12 @@ const ChatRoom = () => {
                 status: 'SYSTEM'
             };
 
-            if (tab === "CHATROOM") {
-                setPublicChats(prevPublicChats => [...prevPublicChats, systemMessage]);
-            } else {
-                setPrivateChats(prevChats => {
-                    const newChats = new Map(prevChats);
-                    const chatList = newChats.get(tab) || [];
-                    newChats.set(tab, [...chatList, systemMessage]);
-                    return newChats;
-                });
-            }
+            setPrivateChats(prevChats => {
+                const newChats = new Map(prevChats);
+                const chatList = newChats.get(tab) || [];
+                newChats.set(tab, [...chatList, systemMessage]);
+                return newChats;
+            });
         }
     };
 
@@ -255,47 +245,106 @@ const ChatRoom = () => {
         }
     };
 
-    const handleSetTab = (name, color, source) => {
-        setTab(name);
-        setSource(source);
-        const avatar = getAvatar(name);
-        setCurrentCustomer({ name, avatar, color });
+    const handleMemberClick = (member) => {
+        setCurrentMember(member);
+        setChatGroupId(member.CM_ChatGroup_ID);
+        setUserData(prevUserData => ({
+            ...prevUserData,
+            adClientId: member.AD_Client_ID || prevUserData.adClientId,
+            adOrgId: member.AD_Org_ID || prevUserData.adOrgId,
+            adUserId: member.conversationId || prevUserData.adUserId,
+            message: '',
+        }));
+        if (!joinedMembers.get(member.name)) {
+            handleJoin(member.name);
+        }
         setIsFilterCleared(false);
     };
 
-    const handleSetAvatarColors = (colors) => {
-        setAvatarColors(colors);
+    // Handle receive data from MessageList
+    const handleReceiveData = (data) => {
+        setMessageData(data);
+
+        // Cập nhật currentMember và chatGroupId
+        setCurrentMember(prev => ({
+            ...prev,
+            adClientId: data.adClientId,
+            adOrgId: data.adOrgId,
+            adUserId: data.adUserId,
+            cmChatId: data.cmChatId,
+            createdBy: data.createdBy,
+            updatedBy: data.updatedBy
+        }));
+        setChatGroupId(data.cmChatGroupId);
     };
 
-    const setRemoteStream = (stream) => {
-        // Xử lý stream từ xa
-    };
+    // useEffect hooks
+    useEffect(() => {
+        if (authData && authData.token && !stompService.isConnected()) {
+            console.log("Tên người dùng:", authData.token);
+            setUserData((prevUserData) => ({
+                ...prevUserData,
+                username: authData.token,
+            }));
+            connect();
+        }
+    }, [authData, stompService]);
 
     useEffect(() => {
-        if (userData.connected) {
+        if (userData.connected && userData.username) {
             loadMessagesFromServer(userData.username)
                 .then(data => {
-                    setPublicChats(data.publicMessages);
-                    setPrivateChats(data.privateMessages);
+                    if (Array.isArray(data)) {
+                        console.log("Tin nhắn tải về:", data);
+                    } else {
+                        console.error("Dữ liệu không phải là mảng:", data);
+                    }
                 })
                 .catch(error => console.error("Lỗi khi tải tin nhắn từ server: ", error));
         }
     }, [userData.connected, userData.username]);
 
     useEffect(() => {
-        if (userData.connected) {
-            loadChatHistory(userData.username, "Chat chung")
-                .then(data => {
-                    setPublicChats(data);
-                })
-                .catch(error => console.error("Lỗi khi tải lịch sử chat từ server: ", error));
+        console.log("Đang cố gắng kết nối đến WebSocket");
+        connect();
+    }, [connect]);
+
+    useEffect(() => {
+        if (authData.token) {
+            setUserData((prevUserData) => ({
+                ...prevUserData,
+                username: authData.token,
+            }));
         }
-    }, [userData.connected, userData.username]);
+    }, [authData]);
+
+    useEffect(() => {
+        if (!stompServiceRef.current) {
+            stompServiceRef.current = new StompService(chatGroupId);
+            stompServiceRef.current.setOnMessageCallback(sendValue);
+        }
+
+        if (!stompServiceRef.current.isConnected()) {
+            stompServiceRef.current.connect();
+        }
+
+        return () => {
+            stompServiceRef.current?.disconnect();
+        };
+    }, [chatGroupId]);
 
     const onSearch = (value) => {
         console.log("Tìm kiếm:", value);
-        // Thêm logic tìm kiếm của bạn ở đây
     };
+
+    // const handleFileUpload = (files) => {
+    //     if (files.length > 0) {
+    //         console.log('Thông tin file:', files[0]);
+    //     }
+    // };
+
+    // // Gọi hàm này khi bạn chọn file
+    // handleFileUpload(selectedFiles);
 
     return (
         <div className="chatroom-container">
@@ -304,12 +353,9 @@ const ChatRoom = () => {
                     <div className="body-col-nav">
                         <div className="col-nav">
                             <ColNavbar
-                                setTab={handleSetTab}
-                                handleResetFilter={handleResetFilter}
+                                setTab={setTab}
                                 setLoginType={setLoginType}
-                                setSource={setSource}
-                                setMembers={setMembers}
-                                baseUrl={baseUrl}
+                                handleClearFilter={handleClearFilter}
                             />
                         </div>
                     </div>
@@ -318,9 +364,7 @@ const ChatRoom = () => {
                         <div className="chat-box">
                             <div className='member-search'>
                                 <div className='search-box'>
-                                    <Input.Search
-                                        className='search-button'
-                                        placeholder="Tìm kiếm"
+                                    <Input.Search className='search-button' placeholder="Tìm kiếm"
                                         allowClear
                                         onSearch={onSearch}
                                         size='large'
@@ -385,7 +429,7 @@ const ChatRoom = () => {
                                                     fontSize: '12px',
                                                     transform: 'scale(1, 0.6)',
                                                     marginTop: '-8px',
-                                                    color: isCuuNhatActive ? 'black' : 'lightgray'
+                                                    color: isCuuNhatActive ? 'blackz' : 'lightgray'
                                                 }}
                                             >
                                                 &#9660;
@@ -398,12 +442,18 @@ const ChatRoom = () => {
                                     <div className='member-list'>
                                         <MemberList
                                             privateChats={privateChats}
-                                            setTab={handleSetTab}
+                                            setTab={(name) => {
+                                                handleMemberClick(name);
+                                            }}
                                             tab={tab}
-                                            userData={userData}
-                                            setAvatarColors={handleSetAvatarColors}
+                                            setAvatarColors={setAvatarColors}
                                             source={source}
-                                            members={members}
+                                            baseUrl={baseUrl}
+                                            setCurrentMember={(member) => {
+                                                setCurrentMember(member);
+                                            }}
+                                            setChatGroupId={setChatGroupId}
+                                            onMemberClick={handleMemberClick}
                                         />
                                     </div>
                                 </div>
@@ -431,7 +481,12 @@ const ChatRoom = () => {
                                                             overflow: 'hidden',
                                                         }}
                                                     >
-                                                        <MessageInfor currentCustomer={currentCustomer} userData={userData} />
+                                                        <MessageInfor 
+                                                            currentCustomer={currentCustomer} 
+                                                            userData={userData} 
+                                                            currentMember={currentMember} 
+                                                            botInfo={currentMember?.botInfo || { avatar: null, name: 'Tên BOT' }} 
+                                                        />
                                                     </div>
                                                 </div>
                                                 <div className='chat-input-box'>
@@ -445,10 +500,19 @@ const ChatRoom = () => {
                                                             flexDirection: 'column',
                                                         }}>
                                                             <MessageList
-                                                                chats={tab === "CHATROOM" ? publicChats : (privateChats?.get(tab) || [])}
-                                                                tab={tab} userData={userData} endOfMessagesRef={endOfMessagesRef} avatarColors={avatarColors}
+                                                                chats={privateChats.get(currentMember?.name) || []}
+                                                                tab={tab}
+                                                                userData={userData}
+                                                                endOfMessagesRef={endOfMessagesRef}
+                                                                avatarColors={avatarColors}
+                                                                members={members}
+                                                                chatGroupId={chatGroupId}
+                                                                setMessages={setPrivateChats}
+                                                                baseUrl={baseUrl}
+                                                                currentMember={currentMember}
+                                                                onReceiveData={handleReceiveData}
                                                             />
-                                                            {!joinedMembers.get(tab) && (
+                                                            {!joinedMembers.get(currentMember?.name) && (
                                                                 <div style={{
                                                                     display: 'flex',
                                                                     justifyContent: 'center',
@@ -456,7 +520,7 @@ const ChatRoom = () => {
                                                                 }}>
                                                                     <Button
                                                                         type="primary"
-                                                                        onClick={() => handleJoin(tab)}
+                                                                        onClick={() => handleJoin(currentMember?.name)}
                                                                         style={{
                                                                             width: 'fit-content',
                                                                         }}
@@ -466,7 +530,7 @@ const ChatRoom = () => {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        {joinedMembers.get(tab) && (
+                                                        {joinedMembers.get(currentMember?.name) && (
                                                             <div style={{
                                                                 backgroundColor: 'white',
                                                                 display: 'flex',
@@ -475,16 +539,24 @@ const ChatRoom = () => {
                                                                 flexDirection: 'column',
                                                             }}>
                                                                 <SendMessage
-                                                                    userData={userData}
+                                                                    userData={{
+                                                                        ...userData,
+                                                                        adClientId: messageData.adClientId,
+                                                                        adOrgId: messageData.adOrgId,
+                                                                        adUserId: currentMember?.conversationId,
+                                                                        cmChatGroupId: messageData.cmChatGroupId,
+                                                                        message: userData.message
+                                                                    }}
                                                                     handleMessage={handleMessage}
                                                                     handleKeyPress={handleKeyPress}
                                                                     sendValue={sendValue}
-                                                                    sendPrivateValue={sendPrivateValue}
                                                                     tab={tab}
+                                                                    selectedFiles={selectedFiles}
+                                                                    setSelectedFiles={setSelectedFiles}
                                                                 />
                                                                 <Button
                                                                     type="default"
-                                                                    onClick={() => handleTransfer(tab)}
+                                                                    onClick={() => handleTransfer(currentMember?.name)}
                                                                     style={{
                                                                         marginTop: '10px',
                                                                         backgroundColor: '#0ec50e',

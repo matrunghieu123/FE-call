@@ -188,7 +188,7 @@ const CallFooter = ({
               position: 'absolute',
               width: '300px',
               maxWidth: '400px',
-              height: '224px',
+              height: '255px',
               right: '400px',
               bottom: '0',
               zIndex: 2000,
