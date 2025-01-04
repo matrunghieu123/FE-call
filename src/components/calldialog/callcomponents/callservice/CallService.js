@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { getAuthToken, getCallRecord } from '../../../../services/call_api/Callapi';
 import JsSIPService from '../../../../services/call_api/JsSIPService';
+import JsSIP from 'jssip';
 
 // Hàm tiện ích để ghi log trạng thái kết nối
 const logConnectionStatus = (status) => {
@@ -26,16 +27,19 @@ const CallModal = ({ inputNumber, closeModal }) => {
   }, [inputNumber]);
 
   const onCallEnded = useCallback(async () => {
+    if (sessionRef.current && sessionRef.current.status !== JsSIP.RTCSession.C.STATUS_TERMINATED) {
+        sessionRef.current.terminate();
+    }
     notification.info({ message: 'Cuộc gọi đã kết thúc' });
     try {
-      const token = await getAuthToken();
-      await getCallRecord(token); 
+        const token = await getAuthToken();
+        await getCallRecord(token); 
     } catch (error) {
-      console.error('Lỗi khi lấy bản ghi cuộc gọi:', error);
-      notification.error({
-        message: 'Lỗi lấy bản ghi',
-        description: 'Không thể lấy bản ghi cuộc gọi.'
-      });
+        console.error('Lỗi khi lấy bản ghi cuộc gọi:', error);
+        notification.error({
+            message: 'Lỗi lấy bản ghi',
+            description: 'Không thể lấy bản ghi cuộc gọi.'
+        });
     }
     closeModal();
   }, [closeModal]);
@@ -135,7 +139,9 @@ const CallModal = ({ inputNumber, closeModal }) => {
     initiateCall();
 
     return () => {
-      sessionRef.current?.isInProgress && sessionRef.current.terminate();
+      if (sessionRef.current?.isInProgress) {
+        sessionRef.current.terminate();
+      }
     };
   }, [inputNumber, closeModal, onCallAccepted, onCallEnded, onCallFailed, onIncomingCall]);
 
@@ -216,5 +222,5 @@ export const handleCall = async (inputNumber) => {
     root = createRoot(modalContainer);
   }
 
-  root.render(<CallModal startTime={startTime} inputNumber={inputNumber} closeModal={closeModal} />);
+  root.render(<CallModal inputNumber={inputNumber} closeModal={closeModal} />);
 };

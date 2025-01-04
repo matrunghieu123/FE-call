@@ -26,21 +26,33 @@ class JsSIPService {
 
     this.coolPhone = new JsSIP.UA(configuration);
     this._registerPhoneEvents();
+
+    // Kiểm tra trạng thái kết nối từ localStorage
+    const wasConnected = localStorage.getItem('sipConnected') === 'true';
+    if (wasConnected) {
+      this.start();
+    }
   }
 
   start() {
     this.coolPhone.start();
+    // Lưu trạng thái kết nối vào localStorage
+    localStorage.setItem('sipConnected', 'true');
   }
 
   _registerPhoneEvents() {
     this.coolPhone.on('connected', () => {
       console.log('[JsSIPService] Connected to SIP server.');
       this.updateConnectionStatus('connected');
+      // Lưu trạng thái kết nối vào localStorage
+      localStorage.setItem('sipConnected', 'true');
     });
 
     this.coolPhone.on('disconnected', () => {
       console.log('[JsSIPService] Disconnected from SIP server.');
       this.updateConnectionStatus('disconnected');
+      // Xóa trạng thái kết nối khỏi localStorage
+      localStorage.removeItem('sipConnected');
       setTimeout(() => {
         console.log('[JsSIPService] Attempting to reconnect...');
         this.coolPhone.start();
@@ -72,7 +84,7 @@ class JsSIPService {
     console.log('[JsSIPService] Handling new RTC session.');
     const newSession = e.session;
 
-    if (this.session) {
+    if (this.session && this.session.status !== JsSIP.RTCSession.C.STATUS_TERMINATED) {
       console.log('[JsSIPService] Terminating existing session.');
       this.session.terminate();
     }
@@ -88,12 +100,14 @@ class JsSIPService {
       console.log('[JsSIPService] Call ended.');
       this.session = null;
       this.updateConnectionStatus('ended');
+      this.coolPhone.start();
     });
 
     this.session.on('failed', (e) => {
       console.log('[JsSIPService] Call failed:', e);
       this.session = null;
       this.updateConnectionStatus('failed');
+      this.coolPhone.start();
     });
 
     this.session.on('peerconnection', (e) => {
@@ -167,6 +181,8 @@ class JsSIPService {
       console.log('[JsSIPService] Disconnecting SIP client.');
       this.coolPhone.terminateSessions();
       this.coolPhone.stop();
+      // Xóa trạng thái kết nối khỏi localStorage
+      localStorage.removeItem('sipConnected');
     }
   }
 
