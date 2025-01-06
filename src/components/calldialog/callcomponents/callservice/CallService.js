@@ -222,5 +222,7 @@ export const handleCall = async (inputNumber) => {
     root = createRoot(modalContainer);
   }
 
-  root.render(<CallModal inputNumber={inputNumber} closeModal={closeModal} />);
+  if (root && modalContainer) {
+    root.render(<CallModal inputNumber={inputNumber} closeModal={closeModal} />);
+  }
 };

@@ -7,7 +7,7 @@ import MemberList from '../body/member/MemberList';
 import FilterBar from '../body/filterbar/FilterMenu';
 import ChatTool from '../body/chattool/ChatTool';
 import CallDialog from './calldialog/CallDialog';
-import { Input, Button } from 'antd';
+import { Input, Button, Modal } from 'antd';
 import { 
     loadMessagesFromServer
 } from '../services/chat_api';
@@ -15,6 +15,7 @@ import '../index.css';
 import { useSelector } from 'react-redux';
 import StompService from '../services/stomp_service';
 import chatAPI from '../services/chat_api';
+import JsSIPService from '../services/call_api/JsSIPService';
 
 const ChatRoom = () => {
     // Lấy dữ liệu từ authReducer
@@ -44,6 +45,7 @@ const ChatRoom = () => {
     const [chatGroupId, setChatGroupId] = useState(null);
     // Message data
     const [messageData, setMessageData] = useState({});
+    const [incomingSession, setIncomingSession] = useState(null);
 
     // Refs
     const endOfMessagesRef = useRef(null);
@@ -333,18 +335,53 @@ const ChatRoom = () => {
         };
     }, [chatGroupId]);
 
+    useEffect(() => {
+        const jsSIPService = new JsSIPService();
+        jsSIPService.initializeAndConnect();
+        jsSIPService.registerEventHandlers();
+
+        jsSIPService.onIncomingCall((session) => {
+            console.log('Incoming call session:', session);
+            setIncomingSession(session);
+        });
+
+        jsSIPService.eventEmitter.on('callEnded', () => {
+            console.log('Call ended, closing modal.');
+            setIncomingSession(null);
+        });
+
+        return () => {
+            jsSIPService.disconnect();
+        };
+    }, []);
+
     const onSearch = (value) => {
         console.log("Tìm kiếm:", value);
     };
 
-    // const handleFileUpload = (files) => {
-    //     if (files.length > 0) {
-    //         console.log('Thông tin file:', files[0]);
-    //     }
-    // };
+    // Ví dụ: Gọi cuộc gọi từ ChatRoom
+    const handleMakeCall = (number) => {
+        const jsSIPService = new JsSIPService();
+        jsSIPService.makeCall(number);
+    };
 
-    // // Gọi hàm này khi bạn chọn file
-    // handleFileUpload(selectedFiles);
+    const handleAcceptCall = () => {
+        if (incomingSession) {
+            incomingSession.answer();
+            setIncomingSession(null);
+        }
+    };
+
+    const handleRejectCall = () => {
+        if (incomingSession) {
+            console.log('Rejecting call...');
+            console.log('Session status:', incomingSession.status);
+            incomingSession.terminate();
+            setIncomingSession(null);
+        } else {
+            console.log('No active session to reject.');
+        }
+    };
 
     return (
         <div className="chatroom-container">
@@ -589,6 +626,26 @@ const ChatRoom = () => {
                 </div>
                 <CallDialog members={members} />
             </div>
+            {incomingSession && (
+                <Modal
+                    title="Cuộc gọi đến"
+                    open={true}
+                    onOk={handleAcceptCall}
+                    onCancel={handleRejectCall}
+                    footer={
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Button key="cancel" onClick={handleRejectCall}>
+                                Hủy
+                            </Button>
+                            <Button key="ok" type="primary" onClick={handleAcceptCall}>
+                                Nghe
+                            </Button>
+                        </div>
+                    }
+                >
+                    <p>Có cuộc gọi đến từ số: {incomingSession.remote_identity.uri.user}</p>
+                </Modal>
+            )}
         </div>
     );
 };

@@ -2,7 +2,8 @@ import { EventEmitter } from 'events';
 import JsSIP from 'jssip';
 
 class JsSIPService {
-  constructor(extension, setRemoteStream) {
+  constructor(setRemoteStream) {
+    console.log('[JsSIPService] Initializing JsSIPService...');
     this.coolPhone = null;
     this.session = null;
     this.audioRemote = document.createElement('audio');
@@ -16,8 +17,8 @@ class JsSIPService {
     const socket = new JsSIP.WebSocketInterface(process.env.REACT_APP_SIP_SOCKET_URL);
     const configuration = {
       sockets: [socket],
-      display_name: extension,
-      uri: `sip:${extension}@${process.env.REACT_APP_SIP_SERVER}`,
+      display_name: process.env.REACT_APP_SIP_USERNAME,
+      uri: `sip:${process.env.REACT_APP_EXTENSION_ALOHUB}@${process.env.REACT_APP_SIP_SERVER}`,
       password: process.env.REACT_APP_SIP_PASSWORD,
     };
 
@@ -25,19 +26,24 @@ class JsSIPService {
     JsSIP.debug.enable('JsSIP:*');
 
     this.coolPhone = new JsSIP.UA(configuration);
+    console.log('[JsSIPService] JsSIP UA created with configuration:', configuration);
     this._registerPhoneEvents();
 
     // Kiểm tra trạng thái kết nối từ localStorage
     const wasConnected = localStorage.getItem('sipConnected') === 'true';
+    console.log('[JsSIPService] Was connected:', wasConnected);
     if (wasConnected) {
+      console.log('[JsSIPService] Restarting connection...');
       this.start();
     }
   }
 
   start() {
+    console.log('[JsSIPService] Starting JsSIP UA...');
     this.coolPhone.start();
     // Lưu trạng thái kết nối vào localStorage
     localStorage.setItem('sipConnected', 'true');
+    console.log('[JsSIPService] Connection status saved to localStorage.');
   }
 
   _registerPhoneEvents() {
@@ -72,6 +78,8 @@ class JsSIPService {
 
     this.coolPhone.on('registrationFailed', (e) => {
       console.error('[JsSIPService] Registration failed:', e);
+      console.error('Response:', e.response);
+      console.error('Cause:', e.cause);
       this.updateConnectionStatus('registrationFailed');
     });
 
@@ -81,34 +89,35 @@ class JsSIPService {
   }
 
   _handleNewRTCSession(e) {
-    console.log('[JsSIPService] Handling new RTC session.');
     const newSession = e.session;
 
-    if (this.session && this.session.status !== JsSIP.RTCSession.C.STATUS_TERMINATED) {
-      console.log('[JsSIPService] Terminating existing session.');
-      this.session.terminate();
+    if (!newSession) {
+        console.error('[JsSIPService] New session is undefined.');
+        return;
+    }
+
+    if (newSession.direction === 'incoming') {
+        console.log('[JsSIPService] Incoming call from:', newSession.remote_identity.uri.user);
+        this.eventEmitter.emit('incomingCall', newSession);
+    }
+
+    newSession.on('ended', () => {
+        console.log('[JsSIPService] Call ended.');
+        this.eventEmitter.emit('callEnded');
+    });
+
+    newSession.on('failed', (e) => {
+        console.log('[JsSIPService] Call failed:', e);
+        this.eventEmitter.emit('callEnded');
+    });
+
+    // Đảm bảo trạng thái phiên được kiểm tra chính xác
+    if (this.session && this.session.status !== JsSIP.RTCSession?.C?.STATUS_TERMINATED && this.session.status !== JsSIP.RTCSession?.C?.STATUS_NULL) {
+        console.log('[JsSIPService] Terminating existing session.');
+        this.session.terminate();
     }
 
     this.session = newSession;
-
-    if (this.session.direction === 'incoming') {
-      console.log('[JsSIPService] Incoming call from:', this.session.remote_identity.uri.user);
-      this.eventEmitter.emit('incomingCall', this.session);
-    }
-
-    this.session.on('ended', () => {
-      console.log('[JsSIPService] Call ended.');
-      this.session = null;
-      this.updateConnectionStatus('ended');
-      this.coolPhone.start();
-    });
-
-    this.session.on('failed', (e) => {
-      console.log('[JsSIPService] Call failed:', e);
-      this.session = null;
-      this.updateConnectionStatus('failed');
-      this.coolPhone.start();
-    });
 
     this.session.on('peerconnection', (e) => {
       console.log('[JsSIPService] Peer connection established.');
@@ -196,6 +205,41 @@ class JsSIPService {
 
   onIncomingCall(listener) {
     this.eventEmitter.on('incomingCall', listener);
+  }
+
+  // Phương thức để khởi tạo và kết nối JsSIP
+  initializeAndConnect() {
+    console.log('[JsSIPService] Initializing and connecting...');
+    this.start();
+  }
+
+  // Phương thức để đăng ký sự kiện
+  registerEventHandlers() {
+    this.onConnectionStatusChanged((status) => {
+      console.log('[JsSIPService] Connection status changed:', status);
+    });
+
+    this.onIncomingCall((session) => {
+      console.log('[JsSIPService] Incoming call:', session);
+      this.handleIncomingCall(session);
+    });
+  }
+
+  handleIncomingCall(session) {
+    // Logic xử lý cuộc gọi đến
+    console.log('[JsSIPService] Handling incoming call from:', session.remote_identity.uri.user);
+    // Ví dụ: Hiển thị thông báo hoặc modal cho người dùng
+  }
+
+  endCall() {
+    if (this.session) {
+      console.log('[JsSIPService] Ending call.');
+      this.session.terminate();
+    }
+  }
+
+  onCallEnded(listener) {
+    this.eventEmitter.on('callEnded', listener);
   }
 }
 
