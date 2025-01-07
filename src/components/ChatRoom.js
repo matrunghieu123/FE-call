@@ -359,12 +359,6 @@ const ChatRoom = () => {
         console.log("Tìm kiếm:", value);
     };
 
-    // Ví dụ: Gọi cuộc gọi từ ChatRoom
-    const handleMakeCall = (number) => {
-        const jsSIPService = new JsSIPService();
-        jsSIPService.makeCall(number);
-    };
-
     const handleAcceptCall = () => {
         if (incomingSession) {
             incomingSession.answer();

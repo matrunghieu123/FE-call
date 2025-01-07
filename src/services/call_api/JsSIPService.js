@@ -22,14 +22,12 @@ class JsSIPService {
       password: process.env.REACT_APP_SIP_PASSWORD,
     };
 
-    // Debugging
-    JsSIP.debug.enable('JsSIP:*');
+    JsSIP.debug.disable();
 
     this.coolPhone = new JsSIP.UA(configuration);
     console.log('[JsSIPService] JsSIP UA created with configuration:', configuration);
     this._registerPhoneEvents();
 
-    // Kiểm tra trạng thái kết nối từ localStorage
     const wasConnected = localStorage.getItem('sipConnected') === 'true';
     console.log('[JsSIPService] Was connected:', wasConnected);
     if (wasConnected) {
@@ -41,23 +39,19 @@ class JsSIPService {
   start() {
     console.log('[JsSIPService] Starting JsSIP UA...');
     this.coolPhone.start();
-    // Lưu trạng thái kết nối vào localStorage
     localStorage.setItem('sipConnected', 'true');
-    console.log('[JsSIPService] Connection status saved to localStorage.');
   }
 
   _registerPhoneEvents() {
     this.coolPhone.on('connected', () => {
       console.log('[JsSIPService] Connected to SIP server.');
       this.updateConnectionStatus('connected');
-      // Lưu trạng thái kết nối vào localStorage
       localStorage.setItem('sipConnected', 'true');
     });
 
     this.coolPhone.on('disconnected', () => {
       console.log('[JsSIPService] Disconnected from SIP server.');
       this.updateConnectionStatus('disconnected');
-      // Xóa trạng thái kết nối khỏi localStorage
       localStorage.removeItem('sipConnected');
       setTimeout(() => {
         console.log('[JsSIPService] Attempting to reconnect...');
@@ -78,8 +72,6 @@ class JsSIPService {
 
     this.coolPhone.on('registrationFailed', (e) => {
       console.error('[JsSIPService] Registration failed:', e);
-      console.error('Response:', e.response);
-      console.error('Cause:', e.cause);
       this.updateConnectionStatus('registrationFailed');
     });
 
@@ -92,29 +84,38 @@ class JsSIPService {
     const newSession = e.session;
 
     if (!newSession) {
-        console.error('[JsSIPService] New session is undefined.');
-        return;
+      console.error('[JsSIPService] New session is undefined.');
+      return;
     }
 
     if (newSession.direction === 'incoming') {
-        console.log('[JsSIPService] Incoming call from:', newSession.remote_identity.uri.user);
-        this.eventEmitter.emit('incomingCall', newSession);
+      console.log('[JsSIPService] Incoming call from:', newSession.remote_identity.uri.user);
+      this.eventEmitter.emit('incomingCall', newSession);
     }
 
     newSession.on('ended', () => {
-        console.log('[JsSIPService] Call ended.');
-        this.eventEmitter.emit('callEnded');
+      console.log('[JsSIPService] Call ended.');
+      this.eventEmitter.emit('callEnded');
     });
 
     newSession.on('failed', (e) => {
-        console.log('[JsSIPService] Call failed:', e);
-        this.eventEmitter.emit('callEnded');
+      console.log('[JsSIPService] Call failed:', e);
+      this.eventEmitter.emit('callEnded');
     });
 
-    // Đảm bảo trạng thái phiên được kiểm tra chính xác
-    if (this.session && this.session.status !== JsSIP.RTCSession?.C?.STATUS_TERMINATED && this.session.status !== JsSIP.RTCSession?.C?.STATUS_NULL) {
-        console.log('[JsSIPService] Terminating existing session.');
+    if (
+      this.session &&
+      JsSIP?.RTCSession &&
+      JsSIP?.RTCSession?.C &&
+      this.session?.status !== JsSIP?.RTCSession?.C?.STATUS_TERMINATED &&
+      this.session?.status !== JsSIP?.RTCSession?.C?.STATUS_NULL
+    ) {
+      console.log('[JsSIPService] Terminating existing session.');
+      try {
         this.session.terminate();
+      } catch (error) {
+        console.error('[JsSIPService] Error terminating existing session:', error);
+      }
     }
 
     this.session = newSession;
@@ -150,7 +151,7 @@ class JsSIPService {
   _filterSDP(sdp) {
     return sdp
       .split('\r\n')
-      .filter(line => !/^a=candidate:\d+ \d+ \w+ \d+ [0-9a-fA-F:]+ .*/.test(line))
+      .filter((line) => !/^a=candidate:\d+ \d+ \w+ \d+ [0-9a-fA-F:]+ .*/.test(line))
       .join('\r\n');
   }
 
@@ -181,17 +182,24 @@ class JsSIPService {
   cancelCall() {
     if (this.session) {
       console.log('[JsSIPService] Canceling call.');
-      this.session.terminate();
+      try {
+        this.session.terminate();
+      } catch (error) {
+        console.error('[JsSIPService] Error canceling call:', error);
+      }
     }
   }
 
   disconnect() {
     if (this.coolPhone) {
       console.log('[JsSIPService] Disconnecting SIP client.');
-      this.coolPhone.terminateSessions();
-      this.coolPhone.stop();
-      // Xóa trạng thái kết nối khỏi localStorage
-      localStorage.removeItem('sipConnected');
+      try {
+        this.coolPhone.terminateSessions();
+        this.coolPhone.stop();
+        localStorage.removeItem('sipConnected');
+      } catch (error) {
+        console.error('[JsSIPService] Error disconnecting SIP client:', error);
+      }
     }
   }
 
@@ -207,13 +215,11 @@ class JsSIPService {
     this.eventEmitter.on('incomingCall', listener);
   }
 
-  // Phương thức để khởi tạo và kết nối JsSIP
   initializeAndConnect() {
     console.log('[JsSIPService] Initializing and connecting...');
     this.start();
   }
 
-  // Phương thức để đăng ký sự kiện
   registerEventHandlers() {
     this.onConnectionStatusChanged((status) => {
       console.log('[JsSIPService] Connection status changed:', status);
@@ -226,15 +232,17 @@ class JsSIPService {
   }
 
   handleIncomingCall(session) {
-    // Logic xử lý cuộc gọi đến
     console.log('[JsSIPService] Handling incoming call from:', session.remote_identity.uri.user);
-    // Ví dụ: Hiển thị thông báo hoặc modal cho người dùng
   }
 
   endCall() {
     if (this.session) {
       console.log('[JsSIPService] Ending call.');
-      this.session.terminate();
+      try {
+        this.session.terminate();
+      } catch (error) {
+        console.error('[JsSIPService] Error ending call:', error);
+      }
     }
   }
 

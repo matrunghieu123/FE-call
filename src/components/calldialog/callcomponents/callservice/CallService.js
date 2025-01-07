@@ -198,7 +198,6 @@ export const handleCall = async (inputNumber) => {
     return notification.error({ message: 'Lỗi', description: 'Số điện thoại không hợp lệ' });
   }
 
-  const startTime = new Date();
 
   const closeModal = () => {
     if (root) {
