@@ -7,7 +7,7 @@ import MemberList from '../body/member/MemberList';
 import FilterBar from '../body/filterbar/FilterMenu';
 import ChatTool from '../body/chattool/ChatTool';
 import CallDialog from './calldialog/CallDialog';
-import { Input, Button, Modal } from 'antd';
+import { Input, Button, Modal, Spin } from 'antd';
 import { 
     loadMessagesFromServer
 } from '../services/chat_api';
@@ -16,6 +16,7 @@ import { useSelector } from 'react-redux';
 import StompService from '../services/stomp_service';
 import chatAPI from '../services/chat_api';
 import JsSIPService from '../services/call_api/JsSIPService';
+import CallService from './calldialog/callcomponents/callservice/CallService';
 
 const ChatRoom = () => {
     // Lấy dữ liệu từ authReducer
@@ -46,6 +47,8 @@ const ChatRoom = () => {
     // Message data
     const [messageData, setMessageData] = useState({});
     const [incomingSession, setIncomingSession] = useState(null);
+    const [connecting, setConnecting] = useState(false);
+    const [connectingTime, setConnectingTime] = useState(0);
 
     // Refs
     const endOfMessagesRef = useRef(null);
@@ -355,6 +358,19 @@ const ChatRoom = () => {
         };
     }, []);
 
+    useEffect(() => {
+        let timer;
+        if (connecting) {
+            timer = setInterval(() => {
+                setConnectingTime(prevTime => prevTime + 1);
+            }, 1000);
+        } else {
+            setConnectingTime(0);
+        }
+
+        return () => clearInterval(timer);
+    }, [connecting]);
+
     const onSearch = (value) => {
         console.log("Tìm kiếm:", value);
     };
@@ -363,7 +379,16 @@ const ChatRoom = () => {
         if (incomingSession) {
             incomingSession.answer();
             setIncomingSession(null);
+            setConnecting(true);
         }
+    };
+
+    const handleCancelConnecting = () => {
+        if (incomingSession) {
+            incomingSession.terminate();
+            setIncomingSession(null);
+        }
+        setConnecting(false);
     };
 
     const handleRejectCall = () => {
@@ -640,8 +665,25 @@ const ChatRoom = () => {
                     <p>Có cuộc gọi đến từ số: {incomingSession.remote_identity.uri.user}</p>
                 </Modal>
             )}
+            {connecting && (
+                <Modal
+                    title="Đang kết nối..."
+                    open={true}
+                    footer={
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <Button key="cancel" onClick={handleCancelConnecting} style={{ backgroundColor: 'red', color: 'white' }}>
+                                Huỷ
+                            </Button>
+                        </div>
+                    }
+                    closable={false}
+                >
+                    <p>Thời gian kết nối: {Math.floor(connectingTime / 60)} phút {connectingTime % 60} giây</p>
+                </Modal>
+            )}
         </div>
     );
 };
 
 export default ChatRoom;
+

@@ -53,7 +53,7 @@ const CallModal = ({ inputNumber, closeModal }) => {
       description: `Cuộc gọi thất bại: ${cause}. Chi tiết: ${message}`,
     });
     closeModal();
-    sessionRef.current?.terminate();
+    // sessionRef.current?.terminate();
   }, [closeModal]);
 
   const onIncomingCall = useCallback((session) => {
@@ -84,7 +84,7 @@ const CallModal = ({ inputNumber, closeModal }) => {
         });
     } else {
         console.log(`Cuộc gọi từ số không mong muốn: ${incomingNumber}`);
-        session.terminate(); // Từ chối cuộc gọi nếu không phải số mong muốn
+        // session.terminate();
     }
   }, [onCallAccepted, closeModal]);
 
@@ -148,43 +148,51 @@ const CallModal = ({ inputNumber, closeModal }) => {
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
 
-  return (
+  const ConnectingModal = ({ visible }) => (
     <Modal
-      title="Đang gọi..."
-      open={true}
-      onCancel={() => {
-        if (sessionRef.current?.session) {
-          sessionRef.current.terminate();
-        }
-        closeModal();
-      }}
-      footer={
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <button
-            onClick={() => {
-              if (sessionRef.current?.session) {
-                sessionRef.current.terminate();
-              }
-              closeModal();
-            }}
-            style={{ backgroundColor: 'red', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px' }}
-          >
-            Huỷ
-          </button>
-        </div>
-      }
+      title="Đang kết nối..."
+      open={visible}
+      footer={null}
+      closable={false}
     >
-      {connecting ? (
-        <Spin tip="Đang kết nối...">
-          <p>Vui lòng đợi trong giây lát...</p>
-        </Spin>
-      ) : (
-        <>
-          <div>Đang gọi đến số {inputNumber}</div>
-          <div>Thời gian: {minutes} phút {seconds} giây</div>
-        </>
-      )}
+      <Spin tip="Đang kết nối...">
+        <p>Vui lòng đợi trong giây lát...</p>
+      </Spin>
     </Modal>
+  );
+
+  return (
+    <>
+      <ConnectingModal visible={connecting} />
+      <Modal
+        title="Đang gọi..."
+        open={!connecting}
+        onCancel={() => {
+          if (sessionRef.current?.session) {
+            sessionRef.current.terminate();
+          }
+          closeModal();
+        }}
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                if (sessionRef.current?.session) {
+                  sessionRef.current.terminate();
+                }
+                closeModal();
+              }}
+              style={{ backgroundColor: 'red', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '5px' }}
+            >
+              Huỷ
+            </button>
+          </div>
+        }
+      >
+        <div>Đang gọi đến số {inputNumber}</div>
+        <div>Thời gian: {minutes} phút {seconds} giây</div>
+      </Modal>
+    </>
   );
 };
 
@@ -225,3 +233,5 @@ export const handleCall = async (inputNumber) => {
     root.render(<CallModal inputNumber={inputNumber} closeModal={closeModal} />);
   }
 };
+
+export default CallModal;
